@@ -1,39 +1,40 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import "./App.css";
-
+import Login from "./Login";
 function App() {
   const [tasks, setTasks] = useState([]);
   const [text, setText] = useState("");
 
-  const API = "http://localhost:5000/tasks";
-
-  const fetchTasks = async () => {
-    const res = await axios.get(API);
-    setTasks(res.data);
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const addTask = async () => {
+  const addTask = () => {
     if (!text.trim()) return;
-    const res = await axios.post(API, { text });
-    setTasks([...tasks, res.data]);
+
+    const newTask = {
+      id: Date.now(),
+      text,
+      completed: false
+    };
+
+    setTasks([...tasks, newTask]);
     setText("");
   };
 
-  const deleteTask = async (id) => {
-    await axios.delete(`${API}/${id}`);
-    setTasks(tasks.filter(t => t._id !== id));
+  const deleteTask = (id) => {
+    setTasks(tasks.filter(task => task.id !== id));
   };
 
-  const toggleTask = async (task) => {
-    const res = await axios.put(`${API}/${task._id}`, {
-      completed: !task.completed
-    });
-    setTasks(tasks.map(t => t._id === task._id ? res.data : t));
+const token = localStorage.getItem("token");
+
+if (!token) {
+  return <Login />;
+}
+  const toggleTask = (id) => {
+    setTasks(
+      tasks.map(task =>
+        task.id === id
+          ? { ...task, completed: !task.completed }
+          : task
+      )
+    );
   };
 
   return (
@@ -44,21 +45,24 @@ function App() {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Add a new task..."
+          placeholder="Enter task..."
         />
         <button onClick={addTask}>Add</button>
       </div>
 
       <ul className="taskList">
         {tasks.map(task => (
-          <li key={task._id} className="taskItem">
+          <li key={task.id} className="taskItem">
             <span
-              onClick={() => toggleTask(task)}
+              onClick={() => toggleTask(task.id)}
               className={task.completed ? "done" : ""}
             >
               {task.text}
             </span>
-            <button onClick={() => deleteTask(task._id)}>✖</button>
+
+            <button onClick={() => deleteTask(task.id)}>
+              ✖
+            </button>
           </li>
         ))}
       </ul>
